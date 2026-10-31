@@ -1,102 +1,132 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#292929">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title> </title>
+
   <style>
-    * { box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     html, body {
-      margin: 0; width: 100%; height: 100%; overflow: hidden;
-      background: #292929; cursor: pointer;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #292929;
+      cursor: pointer;
     }
-    body { font-family: Arial, sans-serif; color: #eee; }
+
     #screen {
-      position: fixed; inset: 0; display: grid; place-items: center;
-      background: #292929; user-select: none;
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      background: #292929;
     }
-    #message {
-      color: #bdbdbd; font-size: clamp(14px, 2vw, 18px);
-      letter-spacing: .04em; opacity: .7; pointer-events: none;
-    }
+
     #exitPrompt {
-      position: fixed; inset: 0; display: none; align-items: center;
-      justify-content: center; background: rgba(0,0,0,.88);
-      z-index: 5; padding: 24px; text-align: center; cursor: default;
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      background: rgba(0,0,0,0.9);
+      color: white;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      padding: 20px;
     }
-    .panel { max-width: 440px; }
-    h1 { font-size: clamp(24px, 5vw, 38px); margin: 0 0 12px; }
-    p { color: #ccc; line-height: 1.5; margin: 0 0 22px; }
+
     button {
-      border: 0; border-radius: 10px; padding: 14px 22px; margin: 5px;
-      font-size: 16px; font-weight: 700; cursor: pointer;
+      padding: 13px 22px;
+      margin: 8px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
     }
-    #stay { background: #eee; color: #111; }
-    #leave { background: #292929; color: #fff; }
   </style>
 </head>
+
 <body>
+
   <main id="screen"></main>
-  </main>
 
-  <section id="exitPrompt" role="dialog" aria-modal="true" aria-labelledby="exitTitle">
-    <div class="panel">
-      <h1 id="exitTitle">Уже уходишь?</h1>
-      <p>Ты действительно хочешь выйти из полноэкранного режима?</p>
-      <button id="stay" type="button">Остаться</button>
-      <button id="leave" type="button">Выйти</button>
+  <div id="exitPrompt">
+    <div>
+      <h2>Уже уходишь?</h2>
+      <p>Ты действительно хочешь выйти?</p>
+      <br>
+      <button id="stay">Остаться</button>
+      <button id="leave">Выйти</button>
     </div>
-  </section>
+  </div>
 
-  <audio id="sound" src="assets/sound.mp3" loop preload="auto"></audio>
+  <audio id="sound" src="./assets/sound.mp3" loop preload="auto"></audio>
 
   <script>
-    const screen = document.getElementById('screen');
-    const prompt = document.getElementById('exitPrompt');
-    const audio = document.getElementById('sound');
+    const screen = document.getElementById("screen");
+    const sound = document.getElementById("sound");
+    const exitPrompt = document.getElementById("exitPrompt");
+
     let started = false;
     let intentionalExit = false;
 
     async function startPrank() {
       if (started) return;
+
       started = true;
-      document.getElementById('message').textContent = '';
-      try { await audio.play(); } catch (_) {}
+
       try {
-        if (!document.fullscreenElement) {
-          await document.documentElement.requestFullscreen();
-        }
-      } catch (_) {
-        // Fullscreen may be unavailable; audio and the page still work.
+        await sound.play();
+      } catch (error) {
+        console.error("Audio error:", error);
+      }
+
+      try {
+        await document.documentElement.requestFullscreen();
+      } catch (error) {
+        console.log("Fullscreen unavailable:", error);
       }
     }
 
-    screen.addEventListener('click', startPrank);
-    screen.addEventListener('touchstart', startPrank, { passive: true });
+    screen.addEventListener("click", startPrank);
 
-    document.addEventListener('fullscreenchange', () => {
+    document.addEventListener("fullscreenchange", () => {
       if (!started) return;
+
       if (!document.fullscreenElement && !intentionalExit) {
-        prompt.style.display = 'flex';
-      } else if (document.fullscreenElement) {
-        prompt.style.display = 'none';
+        exitPrompt.style.display = "flex";
+      }
+
+      if (document.fullscreenElement) {
+        exitPrompt.style.display = "none";
         intentionalExit = false;
       }
     });
 
-    document.getElementById('stay').addEventListener('click', async () => {
-      prompt.style.display = 'none';
+    document.getElementById("stay").addEventListener("click", async () => {
+      exitPrompt.style.display = "none";
+
       try {
-        if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
-      } catch (_) {}
+        await document.documentElement.requestFullscreen();
+      } catch (error) {
+        console.log(error);
+      }
     });
 
-    document.getElementById('leave').addEventListener('click', () => {
+    document.getElementById("leave").addEventListener("click", () => {
       intentionalExit = true;
-      prompt.style.display = 'none';
-      audio.pause();
+      exitPrompt.style.display = "none";
+      sound.pause();
     });
   </script>
+
 </body>
 </html>
