@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#000000">
+  <title>Открыть</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: #000; }
+    body { font-family: Arial, sans-serif; color: #fff; }
+    #scene { position: fixed; inset: 0; display: grid; place-items: center; background: #000; }
+    #picture { width: 100%; height: 100%; object-fit: contain; display: block; }
+    #start, #exitPrompt {
+      position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+      background: rgba(0,0,0,.94); z-index: 5; padding: 24px; text-align: center;
+    }
+    #exitPrompt { display: none; background: rgba(0,0,0,.88); }
+    .panel { max-width: 440px; }
+    h1 { font-size: clamp(24px, 5vw, 38px); margin: 0 0 12px; }
+    p { color: #ccc; line-height: 1.5; margin: 0 0 22px; }
+    button {
+      border: 0; border-radius: 10px; padding: 14px 22px; margin: 5px;
+      font-size: 16px; font-weight: 700; cursor: pointer;
+    }
+    #go, #stay { background: #fff; color: #000; }
+    #leave { background: #292929; color: #fff; }
+    #hint { position: fixed; left: 12px; bottom: 10px; color: #aaa; font-size: 11px; opacity: .35; z-index: 2; }
+  </style>
+</head>
+<body>
+  <main id="scene">
+    <img id="picture" src="assets/image.png" alt="">
+  </main>
+
+  <section id="start">
+    <div class="panel">
+      <h1>Готов?</h1>
+      <p>Нажми, чтобы открыть.</p>
+      <button id="go" type="button">Открыть</button>
+    </div>
+  </section>
+
+  <section id="exitPrompt" role="dialog" aria-modal="true" aria-labelledby="exitTitle">
+    <div class="panel">
+      <h1 id="exitTitle">Уже уходишь?</h1>
+      <p>Ты действительно хочешь выйти из полноэкранного режима?</p>
+      <button id="stay" type="button">Остаться</button>
+      <button id="leave" type="button">Выйти</button>
+    </div>
+  </section>
+
+  <audio id="sound" src="assets/sound.mp3" loop preload="auto"></audio>
+  <div id="hint">Esc — выход из полноэкранного режима</div>
+
+  <script>
+    const start = document.getElementById('start');
+    const prompt = document.getElementById('exitPrompt');
+    const audio = document.getElementById('sound');
+    let started = false;
+    let intentionalExit = false;
+
+    async function enterFullscreen() {
+      try {
+        if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+      } catch (_) {
+        // Some browsers/devices do not support fullscreen; the page still works normally.
+      }
+    }
+
+    document.getElementById('go').addEventListener('click', async () => {
+      started = true;
+      start.style.display = 'none';
+      audio.volume = 1;
+      try { await audio.play(); } catch (_) {}
+      await enterFullscreen();
+    });
+
+    document.addEventListener('fullscreenchange', () => {
+      if (!started) return;
+      if (!document.fullscreenElement && !intentionalExit) {
+        prompt.style.display = 'flex';
+      } else if (document.fullscreenElement) {
+        prompt.style.display = 'none';
+        intentionalExit = false;
+      }
+    });
+
+    document.getElementById('stay').addEventListener('click', async () => {
+      prompt.style.display = 'none';
+      await enterFullscreen();
+    });
+
+    document.getElementById('leave').addEventListener('click', () => {
+      intentionalExit = true;
+      prompt.style.display = 'none';
+      audio.pause();
+    });
+
+    // If the user closes/navigates away, the browser may show its own generic warning.
+    window.addEventListener('beforeunload', (event) => {
+      if (started && !intentionalExit) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    });
+  </script>
+</body>
+</html>
